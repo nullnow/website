@@ -15,6 +15,8 @@ from pathlib import Path
 
 import environ
 
+from .custom.postgres_db_url_parser import database_url_postgres_parser_with_port as db_parser
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -81,12 +83,28 @@ WSGI_APPLICATION = 'joshua.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+DEV_MODE = env('DEV_MODE')
+
+if DEV_MODE == 'local':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': Path(BASE_DIR, 'db.sqlite3'),
+        }
     }
-}
+else:
+    DB_INFO = db_parser(os.environ['DATABASE_URL'])
+
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': DB_INFO['name'],
+            'USER': DB_INFO['user'],
+            'PASSWORD': DB_INFO['password'],
+            'HOST': DB_INFO['host'],
+            'PORT': DB_INFO['port'],
+        }
+    }
 
 
 # Password validation
